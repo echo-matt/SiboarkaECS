@@ -1,0 +1,89 @@
+# ============================================================
+# CMake build output
+# ============================================================
+build/
+out/
+cmake-build-*/
+
+# ============================================================
+# Visual Studio
+# ============================================================
+# User-specific / machine-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docview
+*.vcxproj.user
+
+# VS local settings folder
+.vs/
+
+# CMake-generated solution and project files (not hand-written)
+*.sln
+*.vcxproj
+*.vcxproj.filters
+
+# Compiled and intermediate output
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.exp
+*.obj
+*.iobj
+*.ipdb
+*.sdf
+*.opensdf
+ipch/
+
+# MSVC output folders sometimes created inside source tree
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# ============================================================
+# C++ general
+# ============================================================
+*.o
+*.a
+*.so
+*.out
+
+# Precompiled headers
+*.gch
+*.pch
+
+# ============================================================
+# CMake FetchContent / external deps (e.g. raylib)
+# Re-downloaded automatically on fresh clone — no need to commit
+# ============================================================
+_deps/
+
+# ============================================================
+# Claude Code local settings (machine-specific IDE tool config)
+# ============================================================
+.claude/
+
+# ============================================================
+# Auto-generated / temp files
+# ============================================================
+unified-whistling-sprout.md
+
+# ============================================================
+# OS
+# ============================================================
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# ============================================================
+# Editor
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
