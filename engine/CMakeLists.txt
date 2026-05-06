@@ -2,7 +2,6 @@ add_library(engine STATIC
 
     # --- Source files (.cpp) — these are compiled into the library ---
     src/World.cpp
-    include/ecs/systems/CollisionSystem.cpp
 
     # --- Core (ECS infrastructure) ---
     include/ecs/EventBus.h
@@ -25,7 +24,6 @@ add_library(engine STATIC
 
     # --- Systems ---
     include/ecs/systems/CollisionEventSystem.h
-    include/ecs/systems/CollisionSystem.h
     include/ecs/systems/GravitySystem.h
     include/ecs/systems/MovementSystem.h
     include/ecs/systems/PhysicsResponseSystem.h
@@ -55,8 +53,6 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include PREFIX "include" FILES
     include/ecs/components/TagComponent.h
     include/ecs/components/TransformComponent.h
     include/ecs/systems/CollisionEventSystem.h
-    include/ecs/systems/CollisionSystem.h
-    include/ecs/systems/CollisionSystem.cpp
     include/ecs/systems/GravitySystem.h
     include/ecs/systems/MovementSystem.h
     include/ecs/systems/PhysicsResponseSystem.h

@@ -18,10 +18,12 @@ add_executable(game
     src/components/DeadComponent.h
     src/components/EnemyComponent.h
     src/components/HealthComponent.h
+    src/components/LifetimeComponent.h
     src/components/RenderComponent.h
     src/components/SpriteComponent.h
     src/components/TargetComponent.h
     src/components/TowerComponent.h
+    src/components/VFX/LaserComponent.h
 
     # --- Events ---
     src/events/DeathEvent.h
@@ -29,9 +31,12 @@ add_executable(game
     src/events/PlaceTowerRequestEvent.h
     src/events/RemoveTowerRequestEvent.cpp
     src/events/RemoveTowerRequestEvent.h
+    src/events/ShotFiredEvent.h
     src/events/TowerPlacedEvent.h
 
     # --- Systems ---
+    src/systems/CollisionSystem.cpp
+    src/systems/CollisionSystem.h
     src/systems/DamageSystem.cpp
     src/systems/DamageSystem.h
     src/systems/DeathSystem.cpp
@@ -44,6 +49,8 @@ add_executable(game
     src/systems/RenderSystem.h
     src/systems/ShootingSystem.cpp
     src/systems/ShootingSystem.h
+    src/systems/VFXSystem.cpp
+    src/systems/VFXSystem.h
     src/systems/WaveSpawnerSystem.cpp
     src/systems/WaveSpawnerSystem.h
 
@@ -62,16 +69,21 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "src" FILES
     src/components/DeadComponent.h
     src/components/EnemyComponent.h
     src/components/HealthComponent.h
+    src/components/LifetimeComponent.h
     src/components/RenderComponent.h
     src/components/SpriteComponent.h
     src/components/TargetComponent.h
     src/components/TowerComponent.h
+    src/components/VFX/LaserComponent.h
     src/events/DeathEvent.h
     src/events/PlaceTowerRequestEvent.cpp
     src/events/PlaceTowerRequestEvent.h
     src/events/RemoveTowerRequestEvent.cpp
     src/events/RemoveTowerRequestEvent.h
+    src/events/ShotFiredEvent.h
     src/events/TowerPlacedEvent.h
+    src/systems/CollisionSystem.cpp
+    src/systems/CollisionSystem.h
     src/systems/DamageSystem.cpp
     src/systems/DamageSystem.h
     src/systems/DeathSystem.cpp
@@ -84,6 +96,8 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "src" FILES
     src/systems/RenderSystem.h
     src/systems/ShootingSystem.cpp
     src/systems/ShootingSystem.h
+    src/systems/VFXSystem.cpp
+    src/systems/VFXSystem.h
     src/systems/WaveSpawnerSystem.cpp
     src/systems/WaveSpawnerSystem.h
 )
