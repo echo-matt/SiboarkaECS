@@ -64,6 +64,7 @@ public:
             
             world.events.emit(RemoveTowerRequestEvent{cellCol, cellRow, snappedX, snappedY});
             SIBOLOG_DEBUG(std::format("Right click at: {},{} " ,cellCol, cellRow));
+            //TODO RIMUOVI BENE LE TOWER CHE I NEMICI CI VANNO ANCORA
         }
     }
     

@@ -5,7 +5,9 @@
 #include <components/RenderComponent.h>
 #include <raylib.h>
 
+#include "components/LifetimeComponent.h"
 #include "components/SpriteComponent.h"
+#include "components/VFX/LaserComponent.h"
 
 class RenderSystem : public System
 {
@@ -50,6 +52,12 @@ public:
                 static_cast<float>(s.texture.height) };
             
             DrawTexturePro(s.texture, src, destRect, s.origin, s.rotation, s.tint);
+        }
+        
+        for (Entity e : world.getEntitiesWith<LaserComponent, LifetimeComponent>())
+        {
+            auto laserComp = world.getComponent<LaserComponent>(e);
+            DrawLineEx({laserComp.x1, laserComp.y1}, {laserComp.x2, laserComp.y2}, 1.f, laserComp.color);
         }
     }
 };

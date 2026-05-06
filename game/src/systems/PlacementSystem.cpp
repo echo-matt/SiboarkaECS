@@ -40,7 +40,11 @@ void PlacementSystem::update(World& world, float deltaTime)
         world.addComponent(placedTower, RenderComponent{cellW, cellH, PURPLE, 0, Box});
         world.addComponent(placedTower, ColliderComponent{cellW, cellH});
         world.addComponent(placedTower, ShootingSystem{});
-        world.addComponent(placedTower, TargetComponent{std::pair<int,int>(e.coords.x, e.coords.y)});
+        
+        world.addComponent(placedTower, TargetComponent{std::pair<int,int>(
+            (int)(e.coords.x + cellW / 2.f),
+            (int)(e.coords.y + cellH / 2.f)
+        )});
         world.addComponent(placedTower, HealthComponent{1000, 1000});
         
         _grid[e.gridCell.x][e.gridCell.y] = true;

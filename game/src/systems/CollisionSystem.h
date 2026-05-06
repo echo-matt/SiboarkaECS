@@ -6,7 +6,7 @@
 #include <ecs/EventBus.h>
 #include <ecs/events/CollisionDirection.h>
 
-#include "CollisionEventSystem.h"
+#include "ecs/systems/CollisionEventSystem.h"
 #include "ecs/components/ColliderComponent.h"
 #include "ecs/components/GroundedComponent.h"
 #include "ecs/components/StaticComponent.h"
