@@ -10,45 +10,67 @@
 #include "ecs/Logger.h"
 #include "ecs/World.h"
 #include "ecs/systems/CollisionEventSystem.h"
+#include "events/ShotFiredEvent.h"
 
 void DamageSystem::update(World& world, float deltaTime)
 {
+    // Tick every enemy's attack cooldown down each frame so they can attack again.
+    for (Entity e : world.getEntitiesWith<EnemyComponent>())
+    {
+        auto& enemy = world.getComponent<EnemyComponent>(e);
+        if (enemy.attackCooldown > 0.f)
+            enemy.attackCooldown -= deltaTime;
+    }
     auto& collisionEvents = world.events.getEvents<CollisionEvent>();
     
-    for (const auto& collisionEvent : collisionEvents)
+    //Hitscan
+    for (const auto& shotFiredEvent : world.events.getEvents<ShotFiredEvent>())
     {
-        /*if (world.hasComponent<BulletComponent>(collisionEvent.a))
+        if (world.isAlive(shotFiredEvent.targetEntity))
         {
-            if (world.hasComponent<HealthComponent>(collisionEvent.b))
+            world.getComponent<HealthComponent>(shotFiredEvent.targetEntity).currentHP -= world.getComponent<TowerComponent>(shotFiredEvent.sourceEntity).damage;
+        }
+    }
+    
+     for (const auto& collisionEvent : collisionEvents)
+    {
+        /* OLD COLLISION BULLET DAMAGE
+         * if (world.hasComponent<BulletComponent>(collisionEvent.a))
+        {
+            if (world.hasComponent<EnemyComponent>(collisionEvent.b))
             {
                 world.getComponent<HealthComponent>(collisionEvent.b).currentHP -= world.getComponent<BulletComponent>(collisionEvent.a).Damage;
                 world.addComponent(collisionEvent.a, DeadComponent{});
-                SIBOLOG_DEBUG(std::format("Damage"));
+                //SIBOLOG_DEBUG(std::format("Damage"));
             }
         }else if (world.hasComponent<BulletComponent>(collisionEvent.b))
         {
-            if (world.hasComponent<HealthComponent>(collisionEvent.a))
+            if (world.hasComponent<EnemyComponent>(collisionEvent.a))
             {
                 world.getComponent<HealthComponent>(collisionEvent.a).currentHP -= world.getComponent<BulletComponent>(collisionEvent.b).Damage;
                 world.addComponent(collisionEvent.b, DeadComponent{});
-                SIBOLOG_DEBUG(std::format("Damage"));
+                //SIBOLOG_DEBUG(std::format("Damage"));
             }
         }*/
 
+        
         if (world.hasComponent<EnemyComponent>(collisionEvent.a))
         {
-            if (world.hasComponent<TowerComponent>(collisionEvent.b))
+            auto& enemy = world.getComponent<EnemyComponent>(collisionEvent.a);
+            if (enemy.attackCooldown <= 0.f && world.hasComponent<TowerComponent>(collisionEvent.b))
             {
-                world.getComponent<HealthComponent>(collisionEvent.b).currentHP -= world.getComponent<EnemyComponent>(collisionEvent.a).Damage;
-                SIBOLOG_DEBUG(std::format("Tower Damaged"));
+                world.getComponent<HealthComponent>(collisionEvent.b).currentHP -= enemy.Damage;
+                enemy.attackCooldown = 1.f / enemy.attackRate;
+                //SIBOLOG_DEBUG(std::format("Tower Damaged"));
             }
         }else if (world.hasComponent<EnemyComponent>(collisionEvent.b))
         {
-            if (world.hasComponent<TowerComponent>(collisionEvent.a))
+            auto& enemy = world.getComponent<EnemyComponent>(collisionEvent.b);
+            if (enemy.attackCooldown <= 0.f && world.hasComponent<TowerComponent>(collisionEvent.a))
             {
-                world.getComponent<HealthComponent>(collisionEvent.a).currentHP -= world.getComponent<EnemyComponent>(collisionEvent.b).Damage;
-                SIBOLOG_DEBUG(std::format("Tower Damaged"));
-
+                world.getComponent<HealthComponent>(collisionEvent.a).currentHP -= enemy.Damage;
+                enemy.attackCooldown = 1.f / enemy.attackRate;
+                //SIBOLOG_DEBUG(std::format("Tower Damaged"));
             }
         }
     }

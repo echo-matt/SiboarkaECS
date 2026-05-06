@@ -9,6 +9,7 @@
 #include "ecs/components/ColliderComponent.h"
 #include "ecs/components/ProjectileComponent.h"
 #include "ecs/components/TransformComponent.h"
+#include "events/ShotFiredEvent.h"
 
 void ShootingSystem::update(World& world, float deltaTime)
 {
@@ -46,8 +47,17 @@ void ShootingSystem::update(World& world, float deltaTime)
         
         if (closestEnemy != NULL_ENTITY)
         {
+            //Hitscan
+            world.events.emit(ShotFiredEvent{e, closestEnemy});
+            towerComponent.cooldownTimer = 1.0f / towerComponent.fireRate;
+            
+            /* OLD BULLET STUFF
+            const RenderComponent& towerRender = world.getComponent<RenderComponent>(e);
+            float spawnX = towerTransform.x + towerRender.width  / 2.f;
+            float spawnY = towerTransform.y + towerRender.height / 2.f;
+
             Entity bullet = world.createEntity();
-            world.addComponent(bullet, TransformComponent{towerTransform.x, towerTransform.y, 150.f, 150.f});
+            world.addComponent(bullet, TransformComponent{spawnX, spawnY, 150.f, 150.f});
             world.addComponent(bullet, BulletComponent{});
             world.addComponent(bullet, ProjectileComponent{});
             world.addComponent(bullet, RenderComponent{2, 2});
@@ -67,8 +77,7 @@ void ShootingSystem::update(World& world, float deltaTime)
             
             bulletTransform.velX = dirX * bulletTransform.velX;
             bulletTransform.velY = dirY * bulletTransform.velY;
-            
+            */
         }
-        
     }
 }

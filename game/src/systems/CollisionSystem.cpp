@@ -1,10 +1,12 @@
-﻿#include <ecs/systems/CollisionSystem.h>
+﻿#include "CollisionSystem.h"
 
 #include <format>
 
-#include "../../../../game/src/components/EnemyComponent.h"
+#include "components/EnemyComponent.h"
+#include "components/TowerComponent.h"
 #include "ecs/Logger.h"
 #include "ecs/components/ProjectileComponent.h"
+#include "ecs/systems/CollisionEventSystem.h"
 
 void CollisionSystem::update(World& world, float deltaTime)
 {
@@ -32,17 +34,7 @@ void CollisionSystem::update(World& world, float deltaTime)
             //If there is a collision
             if (overlapX > 0 && overlapY > 0)
             {
-                if (world.hasComponent<ProjectileComponent>(entities[i]) || world.hasComponent<ProjectileComponent>(entities[j]))
-                {
-                    world.events.emit(CollisionEvent{entities[i], entities[j]});
-                    //SIBOLOG_DEBUG(std::format("Collision detected between {} and {}", entities[i], entities[j]));
-                }
-                
-                if (world.hasComponent<EnemyComponent>(entities[i]) || world.hasComponent<EnemyComponent>(entities[j]))
-                {
-                    world.events.emit(CollisionEvent{entities[i], entities[j]});
-                    SIBOLOG_DEBUG(std::format("Collision detected between {} and {}", entities[i], entities[j]));
-                }
+                world.events.emit(CollisionEvent{entities[i], entities[j]});
             }
         }
     }

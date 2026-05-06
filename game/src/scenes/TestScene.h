@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "ecs/Scene.h"
 #include "ecs/Types.h"
-#include "ecs/systems/CollisionSystem.h"
+#include "systems/CollisionSystem.h"
 #include "ecs/systems/GravitySystem.h"
 #include "ecs/systems/MovementSystem.h"
 #include "ecs/systems/PhysicsResponseSystem.h"
@@ -12,6 +12,7 @@
 #include "systems/PlacementSystem.h"
 #include "systems/RenderSystem.h"
 #include "systems/ShootingSystem.h"
+#include "systems/VFXSystem.h"
 #include "systems/WaveSpawnerSystem.h"
 
 
@@ -30,7 +31,6 @@ private:
     bool _grid[30][30] = {};
     
     InputSystem inputSys;
-    GravitySystem gravitySys;
     MovementSystem movementSys;
     CollisionSystem collisionSys;
     PhysicsResponseSystem physicsResponseSys;
@@ -41,5 +41,6 @@ private:
     DamageSystem damageSys;
     DeathSystem deathSys;
     PathFollowingSystem pathSys;
+    VFXSystem vfxSys;
 
 };
