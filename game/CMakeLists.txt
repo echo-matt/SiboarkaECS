@@ -118,6 +118,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${GAME_ASSETS})
 target_link_libraries(game PRIVATE
     engine
     raylib
+    rlimgui
 )
 
 # target_include_directories for game's OWN source folder.

@@ -15,7 +15,6 @@ void DeathSystem::update(World& world, float deltaTime)
         if (world.getComponent<HealthComponent>(e).currentHP <= 0)
         {
             world.addComponent(e, DeadComponent{});
-            world.events.emit(DeathEvent{e});
             SIBOLOG_DEBUG(std::format("Entity death: {}", e));
         }
     }
@@ -23,5 +22,6 @@ void DeathSystem::update(World& world, float deltaTime)
     for (Entity e : world.getEntitiesWith<DeadComponent>())
     {
         world.destroyEntity(e);
+        world.events.emit(DeathEvent{e});
     }
 }

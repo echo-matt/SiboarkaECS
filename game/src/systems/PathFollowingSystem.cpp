@@ -4,6 +4,7 @@
 #include <format>
 #include <limits>
 
+#include "components/BaseComponent.h"
 #include "components/EnemyComponent.h"
 #include "components/TargetComponent.h"
 #include "ecs/Logger.h"
@@ -19,6 +20,11 @@ PathFollowingSystem::PathFollowingSystem()
 
 void PathFollowingSystem::update(World& world, float deltaTime)
 {
+    //TODO There is a bug where if an enemy has reached a target and a new one gets placed and then immediately removed, the enemy stays still and does not move towards the old target
+    for (Entity e : world.getEntitiesWith<BaseComponent>())
+    {
+        _waypoints.try_emplace(e, world.getComponent<TargetComponent>(e).TargetPosition);
+    }
     for (const TowerPlacedEvent& event : world.events.getEvents<TowerPlacedEvent>())
     {
         _waypoints.try_emplace(event.entity, world.getComponent<TargetComponent>(event.entity).TargetPosition);

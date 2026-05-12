@@ -1,8 +1,8 @@
 # SiboarkaECS
 
-A learning-focused **Entity Component System (ECS)** game engine written in C++20, with a tower defense demo built on top of it.
+A learning-focused **Entity Component System (ECS)** game engine written in C++20, with a tower defense demo and an in-engine editor built on top of it.
 
-Built as a hands-on way to learn ECS architecture from scratch. No game engine framework — just a custom ECS core, [raylib](https://www.raylib.com/) for rendering, and CMake to tie it together.
+Built as a hands-on way to learn ECS architecture from scratch. No game engine framework — just a custom ECS core, [raylib](https://www.raylib.com/) for rendering, [Dear ImGui](https://github.com/ocornut/imgui) for the editor UI, and CMake to tie it together.
 
 > No code has been written by Claude. Claude is used as a teacher/guide.
 
@@ -35,6 +35,19 @@ A tower defense prototype that runs on the engine:
 | `DamageSystem` | Resolves projectile hits and health |
 | `InputSystem` | Player input handling |
 | `RenderSystem` | Draws everything via raylib |
+| `VFXSystem` | Visual effects (laser beams, hit flashes) |
+
+### Editor
+An Unreal-inspired in-engine editor built with Dear ImGui + rlImGui:
+
+| Panel | Role |
+|---|---|
+| **Viewport** | Game renders to a `RenderTexture2D` displayed as a resizable panel |
+| **Hierarchy** | Lists all tagged entities; click to select |
+| **Inspector** | Live-edits components (`TransformComponent`, `HealthComponent`, etc.) on the selected entity |
+| **Play/Pause** | Freezes game time while keeping the editor interactive |
+
+Mouse input is scoped to the viewport content area — clicking editor panels never leaks into the game.
 
 ---
 
@@ -42,7 +55,7 @@ A tower defense prototype that runs on the engine:
 
 - [CMake](https://cmake.org/) 3.16+
 - A C++20 compiler — MSVC 2019+, GCC 10+, or Clang 10+
-- Internet access on the **first build** (CMake downloads raylib 5.0 automatically via FetchContent)
+- Internet access on the **first build** (CMake downloads raylib, Dear ImGui, and rlImGui automatically via FetchContent)
 
 ---
 
@@ -66,7 +79,7 @@ Then run:
 ./game/Debug/game.exe
 ```
 
-> First build takes ~30 seconds longer while raylib downloads and compiles. Subsequent builds are fast.
+> First build takes ~30–60 seconds while raylib, ImGui, and rlImGui download and compile. Subsequent builds are fast.
 
 ### Visual Studio
 
@@ -86,10 +99,11 @@ Then run:
 SiboarkaECS/
 ├── CMakeLists.txt            ← root build file
 ├── cmake/
-│   └── Raylib.cmake          ← FetchContent download for raylib 5.0
+│   ├── Raylib.cmake          ← FetchContent for raylib 5.0
+│   └── ImGui.cmake           ← FetchContent for Dear ImGui v1.92.8 + rlImGui
 ├── engine/                   ← pure ECS library (zero raylib dependency)
 │   ├── include/ecs/
-│   │   ├── World.h           ← entity registry
+│   │   ├── World.h           ← entity registry + InputState
 │   │   ├── System.h          ← base system class
 │   │   ├── EventBus.h        ← typed event system
 │   │   ├── SceneManager.h    ← scene stack
@@ -97,14 +111,14 @@ SiboarkaECS/
 │   │   └── systems/          ← engine-owned systems (physics, collision)
 │   └── src/
 │       └── World.cpp
-└── game/                     ← demo executable (uses raylib)
+└── game/                     ← demo executable (uses raylib + imgui)
     ├── res/                  ← assets (sprites, etc.)
     └── src/
         ├── components/       ← game-specific components
         ├── systems/          ← game-specific systems
         ├── events/           ← game-specific events
         ├── scenes/           ← scene definitions
-        └── main.cpp
+        └── main.cpp          ← game loop + editor panels
 ```
 
 ---
@@ -113,7 +127,7 @@ SiboarkaECS/
 
 The engine and game are kept deliberately separate:
 
-- `engine/` knows **nothing** about raylib — it is a reusable ECS library
-- `game/` owns all rendering and game logic, and depends on both `engine` and `raylib`
+- `engine/` knows **nothing** about raylib or ImGui — it is a reusable ECS library
+- `game/` owns all rendering, game logic, and editor UI, and depends on `engine`, `raylib`, and `imgui`
 
 This means you can swap the renderer or reuse the engine core in a completely different project.

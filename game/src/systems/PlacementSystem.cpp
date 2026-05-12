@@ -11,6 +11,7 @@
 #include "ecs/Logger.h"
 #include "ecs/World.h"
 #include "ecs/components/ColliderComponent.h"
+#include "ecs/components/TagComponent.h"
 #include "ecs/components/TransformComponent.h"
 #include "events/PlaceTowerRequestEvent.h"
 #include "events/RemoveTowerRequestEvent.h"
@@ -40,6 +41,7 @@ void PlacementSystem::update(World& world, float deltaTime)
         world.addComponent(placedTower, RenderComponent{cellW, cellH, PURPLE, 0, Box});
         world.addComponent(placedTower, ColliderComponent{cellW, cellH});
         world.addComponent(placedTower, ShootingSystem{});
+        world.addComponent(placedTower, TagComponent{"Tower"});
         
         world.addComponent(placedTower, TargetComponent{std::pair<int,int>(
             (int)(e.coords.x + cellW / 2.f),

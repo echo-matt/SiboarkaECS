@@ -36,25 +36,25 @@ public:
             }
         }
         
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && world.input.bMouseInViewport)
         {
                 
-            auto mousePos = GetMousePosition();
+            Vector2 mousePos = {world.input.mouseX, world.input.mouseY};
             auto cellWidth = _screenW / 30;
             auto cellHeight = _screenH / 30;
-            int cellCol = (int)(mousePos.x / cellWidth);
+            int cellCol = (int)(mousePos.x/ cellWidth);
             int cellRow = (int)(mousePos.y / cellHeight);
             float snappedX = cellCol * cellWidth;
             float snappedY = cellRow * cellHeight;
-            if (cellCol < 30 && cellRow < 30)
+            if (cellCol >= 0 && cellRow >= 0 && cellCol < 30 && cellRow < 30)
             {
                 world.events.emit(PlaceTowerRequestEvent{cellCol, cellRow, snappedX, snappedY});
             }
         }
 
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && world.input.bMouseInViewport)
         {
-            auto mousePos = GetMousePosition();
+            Vector2 mousePos = {world.input.mouseX, world.input.mouseY};
             auto cellWidth = _screenW / 30;
             auto cellHeight = _screenH / 30;
             int cellCol = (int)(mousePos.x / cellWidth);

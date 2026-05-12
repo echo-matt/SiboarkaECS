@@ -2,6 +2,7 @@
 
 #include <format>
 
+#include "components/BaseComponent.h"
 #include "components/BulletComponent.h"
 #include "components/DeadComponent.h"
 #include "components/EnemyComponent.h"
@@ -57,20 +58,20 @@ void DamageSystem::update(World& world, float deltaTime)
         if (world.hasComponent<EnemyComponent>(collisionEvent.a))
         {
             auto& enemy = world.getComponent<EnemyComponent>(collisionEvent.a);
-            if (enemy.attackCooldown <= 0.f && world.hasComponent<TowerComponent>(collisionEvent.b))
+            if (enemy.attackCooldown <= 0.f && (world.hasComponent<TowerComponent>(collisionEvent.b) || world.hasComponent<BaseComponent>(collisionEvent.b) ))
             {
                 world.getComponent<HealthComponent>(collisionEvent.b).currentHP -= enemy.Damage;
                 enemy.attackCooldown = 1.f / enemy.attackRate;
-                //SIBOLOG_DEBUG(std::format("Tower Damaged"));
+                SIBOLOG_DEBUG(std::format("Tower Damaged"));
             }
         }else if (world.hasComponent<EnemyComponent>(collisionEvent.b))
         {
             auto& enemy = world.getComponent<EnemyComponent>(collisionEvent.b);
-            if (enemy.attackCooldown <= 0.f && world.hasComponent<TowerComponent>(collisionEvent.a))
+            if (enemy.attackCooldown <= 0.f && (world.hasComponent<TowerComponent>(collisionEvent.a) || world.hasComponent<BaseComponent>(collisionEvent.a)))
             {
                 world.getComponent<HealthComponent>(collisionEvent.a).currentHP -= enemy.Damage;
                 enemy.attackCooldown = 1.f / enemy.attackRate;
-                //SIBOLOG_DEBUG(std::format("Tower Damaged"));
+                SIBOLOG_DEBUG(std::format("Tower Damaged"));
             }
         }
     }
