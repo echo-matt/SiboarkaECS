@@ -10,6 +10,12 @@
 
 #include "EventBus.h"
 
+struct InputState
+{
+    float mouseX, mouseY = 0;
+    bool imguiCapturingMouse = false;
+    bool bMouseInViewport = false;
+};
 class World {
 public:
     Entity createEntity();
@@ -73,7 +79,7 @@ public:
     }
     
     EventBus events;
-
+    InputState input = {};
 private:
     Entity m_nextEntityID = 1;
 
@@ -83,4 +89,6 @@ private:
         std::type_index,
         std::unordered_map<Entity, std::any>
     > m_components;
+    
+    
 };

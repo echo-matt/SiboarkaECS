@@ -8,6 +8,7 @@
 #include "ecs/Logger.h"
 #include "ecs/World.h"
 #include "ecs/components/ColliderComponent.h"
+#include "ecs/components/TagComponent.h"
 #include "ecs/components/TransformComponent.h"
 
 WaveSpawnerSystem::WaveSpawnerSystem(float screenWidth, float screenHeight)
@@ -27,10 +28,11 @@ void WaveSpawnerSystem::update(World& world, float deltaTime)
         
         Entity enemy = world.createEntity();
         world.addComponent(enemy, TransformComponent{randX, randY, 50.f, 50.f});
-        world.addComponent(enemy, EnemyComponent{70.f, 10.f});
+        world.addComponent(enemy, EnemyComponent{70.f, 25.f});
         world.addComponent(enemy, HealthComponent{100, 100});
         world.addComponent(enemy, RenderComponent{15, 15, RED});
         world.addComponent(enemy, ColliderComponent{15, 15, false});
+        world.addComponent(enemy, TagComponent{"Enemy"});
         
         SIBOLOG_DEBUG(std::format("Enemy spawned at x: {}, y: {}", world.getComponent<TransformComponent>(enemy).x,world.getComponent<TransformComponent>(enemy).y));
         

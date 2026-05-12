@@ -17,6 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Pull in the raylib download/build logic from a separate file.
 # include() pastes the contents of that file here — it's just for organisation.
 include(cmake/Raylib.cmake)
+include(cmake/ImGui.cmake)
 
 # add_subdirectory() tells CMake: "go read the CMakeLists.txt in that subfolder".
 # Order matters: engine must be listed BEFORE game, because game depends on engine.
