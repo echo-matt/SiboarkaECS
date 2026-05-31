@@ -7,6 +7,7 @@
 #include "components/HealthComponent.h"
 #include "ecs/components/TagComponent.h"
 #include "scenes/TestScene.h"
+#include "InputState.h"
 
 int main() {
 
@@ -20,6 +21,10 @@ int main() {
     World world;
     TestScene scene(900, 900);
     
+    //Whacky inputState variable to keep inheritance in InputSystem.
+    //it's set each frame before updating the scene
+    InputState inputState = {};
+    
     RenderTexture2D gameTexture = LoadRenderTexture(900, 900);
     
     ImVec2 panelPos = {0, 0};
@@ -30,19 +35,28 @@ int main() {
     rlImGuiSetup(true);
 
     while (!WindowShouldClose()) {
+        
         BeginDrawing();
         ClearBackground(BLACK);
         float dt = GetFrameTime();
-        
         Vector2 mouse = GetMousePosition();
-        world.input.mouseX = mouse.x - panelPos.x;
-        world.input.mouseY = mouse.y - panelPos.y;
         
         rlImGuiBegin();
         
+        // Viewport
+        ImGui::Begin("Viewport");
+        panelPos = ImGui::GetCursorScreenPos();
+        inputState.bMouseInViewport = mouse.x >= panelPos.x && mouse.x < panelPos.x + 900 && mouse.y >= panelPos.y && mouse.y < panelPos.y + 900;
+        rlImGuiImageRenderTexture(&gameTexture);
+        ImGui::End();
+        
+        inputState.mouseX = mouse.x - panelPos.x;
+        inputState.mouseY = mouse.y - panelPos.y;
+        inputState.bImguiCapturingMouse = ImGui::GetIO().WantCaptureMouse;
+        
         //Render game to texture
         BeginTextureMode(gameTexture);
-        
+        ClearBackground(BLACK);
         for (int i = 0; i < 31; ++i)
         {
             DrawLine(30*i, 0, 30*i, 900, Color{255,255,255, 50});
@@ -51,11 +65,7 @@ int main() {
         {
             DrawLine(0, 30*i, 900, 30*i, Color{255,255,255, 50});
         }
-        ClearBackground(BLACK);
-        
-        
-        world.input.imguiCapturingMouse = ImGui::GetIO().WantCaptureMouse;
-
+        scene.setInputState(inputState);
         if (bShouldPlay)
         {
             scene.update(world, dt);
@@ -65,18 +75,9 @@ int main() {
         }
         EndTextureMode();
         
-        
         // Play Pause
-
         ImGui::Begin("Play/Pause");
         ImGui::Checkbox("Play", &bShouldPlay);
-        ImGui::End();
-        
-        // Viewport
-        ImGui::Begin("Viewport");
-        panelPos = ImGui::GetCursorScreenPos();
-        world.input.bMouseInViewport = mouse.x >= panelPos.x && mouse.x < panelPos.x + 900 && mouse.y >= panelPos.y && mouse.y < panelPos.y + 900;
-        rlImGuiImageRenderTexture(&gameTexture);
         ImGui::End();
         
         // Outliner
@@ -115,10 +116,14 @@ int main() {
         rlImGuiEnd();
         
         DrawFPS(10,10);
+        
         EndDrawing();
     }
     scene.unload(world);
+    
     UnloadRenderTexture(gameTexture);
+    
     CloseWindow();
+    
     return 0;
 }

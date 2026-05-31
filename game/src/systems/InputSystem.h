@@ -6,6 +6,7 @@
 #include <ecs/components/ControllableComponent.h>
 #include <raylib.h>
 
+#include "InputState.h"
 #include "ecs/Logger.h"
 #include "ecs/components/GroundedComponent.h"
 #include "events/PlaceTowerRequestEvent.h"
@@ -16,64 +17,10 @@ class InputSystem : public System
 public:
     
     InputSystem(float screenW, float screenH);
-    void update(World& world, float deltaTime) override
-    {
-        for (Entity e : world.getEntitiesWith<TransformComponent, ControllableComponent>())
-        {
-            auto& t = world.getComponent<TransformComponent>(e);
-            
-            t.velX = 0.f;
-            t.velY = 0.f;
-            
-            if (IsKeyDown(KEY_W)) t.velY = -250.f;
-            if (IsKeyDown(KEY_S)) t.velY =  250.f;
-            if (IsKeyDown(KEY_A)) t.velX = -250.f;
-            if (IsKeyDown(KEY_D)) t.velX =  250.f;
-            if (IsKeyPressed(KEY_SPACE) && world.hasComponent<GroundedComponent>(e))
-            {
-                world.removeComponent<GroundedComponent>(e);
-                t.velY += -450.f;
-            }
-        }
-        
-        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && world.input.bMouseInViewport)
-        {
-                
-            Vector2 mousePos = {world.input.mouseX, world.input.mouseY};
-            auto cellWidth = _screenW / 30;
-            auto cellHeight = _screenH / 30;
-            int cellCol = (int)(mousePos.x/ cellWidth);
-            int cellRow = (int)(mousePos.y / cellHeight);
-            float snappedX = cellCol * cellWidth;
-            float snappedY = cellRow * cellHeight;
-            if (cellCol >= 0 && cellRow >= 0 && cellCol < 30 && cellRow < 30)
-            {
-                world.events.emit(PlaceTowerRequestEvent{cellCol, cellRow, snappedX, snappedY});
-            }
-        }
-
-        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT) && world.input.bMouseInViewport)
-        {
-            Vector2 mousePos = {world.input.mouseX, world.input.mouseY};
-            auto cellWidth = _screenW / 30;
-            auto cellHeight = _screenH / 30;
-            int cellCol = (int)(mousePos.x / cellWidth);
-            int cellRow = (int)(mousePos.y / cellHeight);
-            float snappedX = cellCol * cellWidth;
-            float snappedY = cellRow * cellHeight;
-            
-            world.events.emit(RemoveTowerRequestEvent{cellCol, cellRow, snappedX, snappedY});
-            SIBOLOG_DEBUG(std::format("Right click at: {},{} " ,cellCol, cellRow));
-            //TODO RIMUOVI BENE LE TOWER CHE I NEMICI CI VANNO ANCORA
-        }
-    }
+    void update(World& world, float deltaTime) override;
+    void setInputState(const InputState& inputState);
     
 private:
-    float _screenW,_screenH;
+    float m_screenW,m_screenH;
+    InputState m_inputState;
 };
-
-inline InputSystem::InputSystem(float screenW, float screenH)
-{
-    _screenH = screenH;
-    _screenW = screenW;
-}

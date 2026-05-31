@@ -23,6 +23,9 @@ public:
     void load(World& world) override;
     void update(World& world, float deltaTime) override;
     void unload(World& world) override;
+    
+    //
+    void setInputState(const InputState& state);
 
 private:
     float _screenW, _screenH;

@@ -8,6 +8,6 @@ public:
     void update(World& world, float deltaTime) override;
 private:
     float _spawnTimer = 1.f;
-    float enemyNumber;
+    int enemyNumber;
     float _screenW, _screenH;
 };

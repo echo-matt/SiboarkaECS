@@ -6,7 +6,7 @@ Entity World::createEntity() {
 
     Entity id = m_nextEntityID++;
 
-    m_aliveEntities.push_back(id);
+    m_aliveEntities.insert(id);
     
     return id;
 }
@@ -14,20 +14,12 @@ Entity World::createEntity() {
 void World::destroyEntity(Entity entity) {
 
     for (auto& [typeKey, entityMap] : m_components) {
-
         entityMap.erase(entity);
     }
-
-    m_aliveEntities.erase(
-        std::remove(m_aliveEntities.begin(), m_aliveEntities.end(), entity),
-        m_aliveEntities.end()
-    );
+    m_aliveEntities.erase(entity);
 }
 
 bool World::isAlive(Entity entity) const {
-
-    for (Entity e : m_aliveEntities) {
-        if (e == entity) return true;
-    }
-    return false;
+    // O(1) lookup  with unordered_set instead of O(n)
+    return m_aliveEntities.contains(entity);
 }

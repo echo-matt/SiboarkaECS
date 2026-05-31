@@ -35,26 +35,6 @@ void DamageSystem::update(World& world, float deltaTime)
     
      for (const auto& collisionEvent : collisionEvents)
     {
-        /* OLD COLLISION BULLET DAMAGE
-         * if (world.hasComponent<BulletComponent>(collisionEvent.a))
-        {
-            if (world.hasComponent<EnemyComponent>(collisionEvent.b))
-            {
-                world.getComponent<HealthComponent>(collisionEvent.b).currentHP -= world.getComponent<BulletComponent>(collisionEvent.a).Damage;
-                world.addComponent(collisionEvent.a, DeadComponent{});
-                //SIBOLOG_DEBUG(std::format("Damage"));
-            }
-        }else if (world.hasComponent<BulletComponent>(collisionEvent.b))
-        {
-            if (world.hasComponent<EnemyComponent>(collisionEvent.a))
-            {
-                world.getComponent<HealthComponent>(collisionEvent.a).currentHP -= world.getComponent<BulletComponent>(collisionEvent.b).Damage;
-                world.addComponent(collisionEvent.b, DeadComponent{});
-                //SIBOLOG_DEBUG(std::format("Damage"));
-            }
-        }*/
-
-        
         if (world.hasComponent<EnemyComponent>(collisionEvent.a))
         {
             auto& enemy = world.getComponent<EnemyComponent>(collisionEvent.a);
