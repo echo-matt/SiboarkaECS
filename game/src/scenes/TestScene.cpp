@@ -81,3 +81,8 @@ void TestScene::update(World& world, float deltaTime)
 void TestScene::unload(World& world)
 {
 }
+
+void TestScene::setInputState(const InputState& state)
+{
+    inputSys.setInputState(state);
+}

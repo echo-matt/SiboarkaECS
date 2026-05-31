@@ -16,8 +16,6 @@ void CollisionSystem::update(World& world, float deltaTime)
     {
         for (size_t j = i + 1; j < entities.size(); j++)
         {
-            if (i == j) continue;
-
             auto& t1 = world.getComponent<TransformComponent>(entities[i]);
             auto& t2 = world.getComponent<TransformComponent>(entities[j]);
             auto& c1 = world.getComponent<ColliderComponent>(entities[i]);

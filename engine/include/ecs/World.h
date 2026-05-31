@@ -7,15 +7,10 @@
 #include <vector>       
 #include <cassert>      
 #include <algorithm>    
+#include <unordered_set>
 
 #include "EventBus.h"
 
-struct InputState
-{
-    float mouseX, mouseY = 0;
-    bool imguiCapturingMouse = false;
-    bool bMouseInViewport = false;
-};
 class World {
 public:
     Entity createEntity();
@@ -79,11 +74,12 @@ public:
     }
     
     EventBus events;
-    InputState input = {};
 private:
     Entity m_nextEntityID = 1;
 
-    std::vector<Entity> m_aliveEntities;
+    //Moved to unordered_set. This causes to scatter elements in memory instead of having a contiguous allocation via vectors
+    //Faster to lookup, prone to cache-misses but hey, whatever, performance is optional am i right?
+    std::unordered_set<Entity> m_aliveEntities;
 
     std::unordered_map<
         std::type_index,

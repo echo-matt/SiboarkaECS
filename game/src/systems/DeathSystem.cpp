@@ -21,7 +21,14 @@ void DeathSystem::update(World& world, float deltaTime)
     
     for (Entity e : world.getEntitiesWith<DeadComponent>())
     {
-        world.destroyEntity(e);
+        // Add to a vector to not change the array mid-iteration
+        m_EntitiesToDelete.emplace_back(e);
         world.events.emit(DeathEvent{e});
     }
+    
+    for (Entity e : m_EntitiesToDelete)
+    {
+        world.destroyEntity(e);
+    }
+    m_EntitiesToDelete.clear();
 }
