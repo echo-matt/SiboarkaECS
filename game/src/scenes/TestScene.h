@@ -7,6 +7,7 @@
 #include "ecs/systems/PhysicsResponseSystem.h"
 #include "systems/DamageSystem.h"
 #include "systems/DeathSystem.h"
+#include "systems/GameStateSystem.h"
 #include "systems/InputSystem.h"
 #include "systems/PathFollowingSystem.h"
 #include "systems/PlacementSystem.h"
@@ -26,13 +27,15 @@ public:
     
     //
     void setInputState(const InputState& state);
+    void DrawGameOver();
 
 private:
     float _screenW, _screenH;
     std::vector<Entity> _entities;
     
-    bool _grid[30][30] = {};
+    Entity _grid[30][30] = {};
     
+    GameStateSystem gameStateSys;
     InputSystem inputSys;
     MovementSystem movementSys;
     CollisionSystem collisionSys;

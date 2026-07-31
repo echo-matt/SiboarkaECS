@@ -17,7 +17,7 @@
 #include "events/RemoveTowerRequestEvent.h"
 #include "events/TowerPlacedEvent.h"
 
-PlacementSystem::PlacementSystem(float screenW, float screenH, bool(&grid)[30][30]) : _grid(grid), _screenW(screenW), _screenH(screenH)
+PlacementSystem::PlacementSystem(float screenW, float screenH, Entity(&grid)[30][30]) : _grid(grid), _screenW(screenW), _screenH(screenH)
 {
 }
 
@@ -25,9 +25,7 @@ void PlacementSystem::update(World& world, float deltaTime)
 {
     for (PlaceTowerRequestEvent e : world.events.getEvents<PlaceTowerRequestEvent>())
     {
-        auto coords = e.coords;
-        
-        if (_grid[e.gridCell.x][e.gridCell.y] != false)
+        if (_grid[e.gridCell.x][e.gridCell.y] != NULL_ENTITY)
         {
             continue;
         }
@@ -40,16 +38,15 @@ void PlacementSystem::update(World& world, float deltaTime)
         world.addComponent(placedTower, TransformComponent{e.coords.x, e.coords.y, 0, 0});
         world.addComponent(placedTower, RenderComponent{cellW, cellH, PURPLE, 0, Box});
         world.addComponent(placedTower, ColliderComponent{cellW, cellH});
-        world.addComponent(placedTower, ShootingSystem{});
         world.addComponent(placedTower, TagComponent{"Tower"});
         
         world.addComponent(placedTower, TargetComponent{std::pair<int,int>(
             (int)(e.coords.x + cellW / 2.f),
             (int)(e.coords.y + cellH / 2.f)
         )});
-        world.addComponent(placedTower, HealthComponent{1000, 1000});
+        world.addComponent(placedTower, HealthComponent{200, 200});
         
-        _grid[e.gridCell.x][e.gridCell.y] = true;
+        _grid[e.gridCell.x][e.gridCell.y] = placedTower;
         
         world.events.emit(TowerPlacedEvent{placedTower});
         SIBOLOG_DEBUG(std::format("Placed tower at {}, {} - Grid cell {}, {}", e.coords.x, e.coords.y, e.gridCell.x, e.gridCell.y));
@@ -57,17 +54,11 @@ void PlacementSystem::update(World& world, float deltaTime)
     
     for (RemoveTowerRequestEvent e : world.events.getEvents<RemoveTowerRequestEvent>())
     {
-        if (_grid[e.gridCell.x][e.gridCell.y] != false)
+        if (_grid[e.gridCell.x][e.gridCell.y] != NULL_ENTITY)
         {
-            for (Entity tower : world.getEntitiesWith<TowerComponent>())
-            {
-                if (world.getComponent<TransformComponent>(tower).x == e.coords.x && world.getComponent<TransformComponent>(tower).y == e.coords.y)
-                {
-                    world.addComponent(tower, DeadComponent{});
-                    SIBOLOG_DEBUG(std::format("Removed tower at {} {}", e.gridCell.x, e.gridCell.y));
-                    _grid[e.gridCell.x][e.gridCell.y] = false;
-                }
-            }
+            world.addComponent(_grid[e.gridCell.x][e.gridCell.y], DeadComponent{});
+            _grid[e.gridCell.x][e.gridCell.y] = NULL_ENTITY;
+            SIBOLOG_DEBUG(std::format("Removed tower at {} {}", e.gridCell.x, e.gridCell.y));
         }
     }
 }
