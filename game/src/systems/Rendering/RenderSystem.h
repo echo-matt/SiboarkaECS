@@ -5,6 +5,8 @@
 #include <components/RenderComponent.h>
 #include <raylib.h>
 
+#include "components/BaseComponent.h"
+#include "components/HealthComponent.h"
 #include "components/LifetimeComponent.h"
 #include "components/SpriteComponent.h"
 #include "components/VFX/LaserComponent.h"

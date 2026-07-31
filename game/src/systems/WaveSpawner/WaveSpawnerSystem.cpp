@@ -6,6 +6,7 @@
 #include "components/GameStateComponent.h"
 #include "components/HealthComponent.h"
 #include "components/RenderComponent.h"
+#include "components/WaveStateComponent.h"
 #include "ecs/Logger.h"
 #include "ecs/World.h"
 #include "ecs/components/ColliderComponent.h"
@@ -19,8 +20,11 @@ WaveSpawnerSystem::WaveSpawnerSystem(float screenWidth, float screenHeight)
     _screenH = screenHeight;
 }
 
+
 void WaveSpawnerSystem::update(World& world, float deltaTime)
 {
+    WaveStateComponent& WaveState = world.getComponent<WaveStateComponent>(world.getEntitiesWith<WaveStateComponent>()[0]);
+    
     if (!bFinishedSpawning)
     {
         _spawnTimer -= deltaTime;
@@ -40,25 +44,33 @@ void WaveSpawnerSystem::update(World& world, float deltaTime)
             SIBOLOG_DEBUG(std::format("Enemy spawned at x: {}, y: {}", world.getComponent<TransformComponent>(enemy).x,world.getComponent<TransformComponent>(enemy).y));
 
             _spawnTimer = 1.f;
-            enemyNumber--;
-            SIBOLOG_DEBUG(std::format("Enemy number: {}", enemyNumber));
-        }
-
-        if (enemyNumber == 0)
-        {
-            totalWavesToSpawn--;
-            enemyNumber = 10;
-            SIBOLOG_DEBUG(std::format("Waves to spawn: ", totalWavesToSpawn));
-            if (totalWavesToSpawn == 0)
+            WaveState.enemyNumber--;
+            SIBOLOG_DEBUG(std::format("Enemy number: {}", WaveState.enemyNumber));
+            if (WaveState.enemyNumber == 0)
             {
-                SIBOLOG_DEBUG(std::format("All waves spawned, finished spawning"));
-                bFinishedSpawning = true;
-                world.events.emit(FinishedSpawningEvent{});
+                bFinishedSpawning = true;   
+            }
+        }
+    }
+    
+    if (bFinishedSpawning && world.getEntitiesWith<EnemyComponent>().empty())
+    {
+        WaveState.enemyNumber = 10;
+        WaveState.totalWavesToSpawn--;
+        WaveState.waveNumber++;
+        bFinishedSpawning = false;
+        SIBOLOG_DEBUG(std::format("Waves to spawn: ", WaveState.totalWavesToSpawn));
+            
+        if (WaveState.totalWavesToSpawn == 0)
+        {
+            SIBOLOG_DEBUG(std::format("All waves spawned, finished spawning"));
+            bFinishedSpawning = true;
+            world.events.emit(FinishedSpawningEvent{});
                 
-                for (Entity& e : world.getEntitiesWith<GameStateComponent>())
-                {
-                    world.getComponent<GameStateComponent>(e).allWavesSpawned = true;
-                }
+            for (Entity& e : world.getEntitiesWith<GameStateComponent>())
+            {
+                GameStateComponent& GS = world.getComponent<GameStateComponent>(e);
+                GS.allWavesSpawned = true;
             }
         }
     }

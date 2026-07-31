@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "components/WaveStateComponent.h"
 #include "ecs/System.h"
 
 class WaveSpawnerSystem : System
@@ -9,8 +10,5 @@ public:
     bool bFinishedSpawning = false;
 private:
     float _spawnTimer = 1.f;
-    int enemyNumber = 10;
-    int totalWavesToSpawn = 1;
     float _screenW, _screenH;
-
 };

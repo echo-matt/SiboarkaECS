@@ -11,6 +11,7 @@
 #include "systems/PathFollowing/PathFollowingSystem.h"
 #include "systems/Placement/PlacementSystem.h"
 #include "systems/Rendering/RenderSystem.h"
+#include "systems/Rendering/UI/UI.h"
 #include "systems/Shooting/ShootingSystem.h"
 #include "systems/Rendering/VFX/VFXSystem.h"
 #include "systems/WaveSpawner/WaveSpawnerSystem.h"
@@ -47,5 +48,6 @@ private:
     DeathSystem deathSys;
     PathFollowingSystem pathSys;
     VFXSystem vfxSys;
+    UI uiSys;
 
 };

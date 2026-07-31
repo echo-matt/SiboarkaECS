@@ -3,16 +3,12 @@
 #include <format>
 
 #include "components/BaseComponent.h"
-#include "components/DeadComponent.h"
-#include "components/EnemyComponent.h"
 #include "components/GameStateComponent.h"
 #include "components/HealthComponent.h"
-#include "components/SpriteComponent.h"
 #include "components/TargetComponent.h"
+#include "components/WaveStateComponent.h"
 #include "ecs/Logger.h"
-#include "ecs/components/StaticComponent.h"
 #include "ecs/components/TagComponent.h"
-#include "events/GameOverEvent.h"
 
 TestScene::TestScene(float screenW, float screenH) : 
 inputSys(screenW, screenH),
@@ -36,8 +32,9 @@ void TestScene::load(World& world)
     // world.addComponent(enemy, RenderComponent{15, 15, RED});
     // world.addComponent(enemy, ColliderComponent{15, 15, false});
     
-    Entity gameState = world.createEntity();
-    world.addComponent(gameState, GameStateComponent{});
+    Entity state = world.createEntity();
+    world.addComponent(state, GameStateComponent{});
+    world.addComponent(state, WaveStateComponent{2, 10});
     
     Entity playerBase = world.createEntity();
     world.addComponent(playerBase, BaseComponent{});
@@ -48,29 +45,29 @@ void TestScene::load(World& world)
     world.addComponent(playerBase, TargetComponent{{_screenW/2 - 25, _screenH/2 - 25}});
     world.addComponent(playerBase, TagComponent{"Base"});
     
-        
 }
 
 void TestScene::update(World& world, float deltaTime)
 {
     
-    gameStateSys.update(world, deltaTime);
     if (!gameStateSys.bGameOver)
     {
-        deathSys.update(world,deltaTime);
         inputSys.update(world, deltaTime);
         waveSpawnerSys.update(world, deltaTime);
-        shootingSys.update(world, deltaTime);
-        placementSys.update(world, deltaTime);
         pathSys.update(world,deltaTime);
+        shootingSys.update(world, deltaTime);
         movementSys.update(world, deltaTime);
         collisionSys.update(world, deltaTime);
         damageSys.update(world, deltaTime);
+        gameStateSys.update(world, deltaTime);
+        deathSys.update(world, deltaTime);
+        placementSys.update(world, deltaTime);
         vfxSys.update(world, deltaTime);
         //physicsResponseSys.update(world,deltaTime);
     }
 
     renderSys.update(world, deltaTime);
+    uiSys.update(world, deltaTime);
     
     if (gameStateSys.bGameOver) DrawGameOver();
 
