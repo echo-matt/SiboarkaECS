@@ -7,7 +7,7 @@
 #include "components/HealthComponent.h"
 #include "ecs/components/TagComponent.h"
 #include "scenes/TestScene.h"
-#include "InputState.h"
+#include "systems/Input/InputState.h"
 
 int main() {
 

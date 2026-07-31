@@ -4,55 +4,14 @@
 # on the next build instead of you having to manually re-run CMake.
 file(GLOB_RECURSE GAME_ASSETS CONFIGURE_DEPENDS "res/*")
 
+# Same CONFIGURE_DEPENDS trick for actual source — add/remove a .cpp or .h under
+# game/src/ and the next build re-triggers configure and picks it up automatically.
+# No manual list maintenance, at the cost of a less explicit/reviewable source list
+# (see engine/CMakeLists.txt for the same pattern and its tradeoffs).
+file(GLOB_RECURSE GAME_SOURCES CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
+
 add_executable(game
-
-    # --- Entrypoint ---
-    src/main.cpp
-
-    # --- Scenes ---
-    src/scenes/TestScene.cpp
-    src/scenes/TestScene.h
-
-    # --- Components (headers only — no .cpp needed, data structs) ---
-    src/components/BulletComponent.h
-    src/components/DeadComponent.h
-    src/components/EnemyComponent.h
-    src/components/HealthComponent.h
-    src/components/LifetimeComponent.h
-    src/components/RenderComponent.h
-    src/components/SpriteComponent.h
-    src/components/TargetComponent.h
-    src/components/TowerComponent.h
-    src/components/VFX/LaserComponent.h
-
-    # --- Events ---
-    src/events/DeathEvent.h
-    src/events/PlaceTowerRequestEvent.cpp
-    src/events/PlaceTowerRequestEvent.h
-    src/events/RemoveTowerRequestEvent.cpp
-    src/events/RemoveTowerRequestEvent.h
-    src/events/ShotFiredEvent.h
-    src/events/TowerPlacedEvent.h
-
-    # --- Systems ---
-    src/systems/CollisionSystem.cpp
-    src/systems/CollisionSystem.h
-    src/systems/DamageSystem.cpp
-    src/systems/DamageSystem.h
-    src/systems/DeathSystem.cpp
-    src/systems/DeathSystem.h
-    src/systems/InputSystem.h
-    src/systems/PathFollowingSystem.cpp
-    src/systems/PathFollowingSystem.h
-    src/systems/PlacementSystem.cpp
-    src/systems/PlacementSystem.h
-    src/systems/RenderSystem.h
-    src/systems/ShootingSystem.cpp
-    src/systems/ShootingSystem.h
-    src/systems/VFXSystem.cpp
-    src/systems/VFXSystem.h
-    src/systems/WaveSpawnerSystem.cpp
-    src/systems/WaveSpawnerSystem.h
+    ${GAME_SOURCES}
 
     # --- Assets (listed for VS visibility only, not compiled) ---
     ${GAME_ASSETS}
@@ -61,46 +20,7 @@ add_executable(game
 # Mirror the real folder structure inside VS Solution Explorer.
 # TREE mode walks the directory and recreates it as filters in VS.
 # Without this, all files appear in a flat list at the top level.
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "src" FILES
-    src/main.cpp
-    src/scenes/TestScene.cpp
-    src/scenes/TestScene.h
-    src/components/BulletComponent.h
-    src/components/DeadComponent.h
-    src/components/EnemyComponent.h
-    src/components/HealthComponent.h
-    src/components/LifetimeComponent.h
-    src/components/RenderComponent.h
-    src/components/SpriteComponent.h
-    src/components/TargetComponent.h
-    src/components/TowerComponent.h
-    src/components/VFX/LaserComponent.h
-    src/events/DeathEvent.h
-    src/events/PlaceTowerRequestEvent.cpp
-    src/events/PlaceTowerRequestEvent.h
-    src/events/RemoveTowerRequestEvent.cpp
-    src/events/RemoveTowerRequestEvent.h
-    src/events/ShotFiredEvent.h
-    src/events/TowerPlacedEvent.h
-    src/systems/CollisionSystem.cpp
-    src/systems/CollisionSystem.h
-    src/systems/DamageSystem.cpp
-    src/systems/DamageSystem.h
-    src/systems/DeathSystem.cpp
-    src/systems/DeathSystem.h
-    src/systems/InputSystem.h
-    src/systems/PathFollowingSystem.cpp
-    src/systems/PathFollowingSystem.h
-    src/systems/PlacementSystem.cpp
-    src/systems/PlacementSystem.h
-    src/systems/RenderSystem.h
-    src/systems/ShootingSystem.cpp
-    src/systems/ShootingSystem.h
-    src/systems/VFXSystem.cpp
-    src/systems/VFXSystem.h
-    src/systems/WaveSpawnerSystem.cpp
-    src/systems/WaveSpawnerSystem.h
-)
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "src" FILES ${GAME_SOURCES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${GAME_ASSETS})
 
 # target_link_libraries: Tells CMake what other libraries game needs.

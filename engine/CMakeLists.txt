@@ -1,66 +1,22 @@
+# GLOB_RECURSE + CONFIGURE_DEPENDS: CMake rescans these patterns on every build
+# and re-runs configure automatically when a file is added/removed/renamed.
+# No more manually editing this list for every new file — see docs/ for the tradeoffs
+# (mainly: a stray file silently joins the build instead of via an explicit, reviewable diff).
+#
+# NOT globbed under game/src/ — these depend on raylib and live there instead:
+#   RenderComponent.h, RenderSystem.h, InputSystem.h
+file(GLOB_RECURSE ENGINE_SRC CONFIGURE_DEPENDS "src/*.cpp")
+file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS "include/ecs/*.h")
+
 add_library(engine STATIC
-
-    # --- Source files (.cpp) — these are compiled into the library ---
-    src/World.cpp
-
-    # --- Core (ECS infrastructure) ---
-    include/ecs/EventBus.h
-    include/ecs/Logger.h
-    include/ecs/Scene.h
-    include/ecs/SceneManager.h
-    include/ecs/System.h
-    include/ecs/Types.h
-    include/ecs/World.h
-
-    # --- Components ---
-    include/ecs/components/ColliderComponent.h
-    include/ecs/components/ControllableComponent.h
-    include/ecs/components/GravityComponent.h
-    include/ecs/components/GroundedComponent.h
-    include/ecs/components/ProjectileComponent.h
-    include/ecs/components/StaticComponent.h
-    include/ecs/components/TagComponent.h
-    include/ecs/components/TransformComponent.h
-
-    # --- Systems ---
-    include/ecs/systems/CollisionEventSystem.h
-    include/ecs/systems/GravitySystem.h
-    include/ecs/systems/MovementSystem.h
-    include/ecs/systems/PhysicsResponseSystem.h
-
-    # --- Events ---
-    include/ecs/events/CollisionDirection.h
-
-    # NOT listed here — these depend on raylib and live in game/src/:
-    #   RenderComponent.h, RenderSystem.h, InputSystem.h
+    ${ENGINE_SRC}
+    ${ENGINE_HEADERS}
 )
 
-# source_group mirrors the include/ecs/ folder tree inside VS Solution Explorer.
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include PREFIX "include" FILES
-    include/ecs/EventBus.h
-    include/ecs/Logger.h
-    include/ecs/Scene.h
-    include/ecs/SceneManager.h
-    include/ecs/System.h
-    include/ecs/Types.h
-    include/ecs/World.h
-    include/ecs/components/ColliderComponent.h
-    include/ecs/components/ControllableComponent.h
-    include/ecs/components/GravityComponent.h
-    include/ecs/components/GroundedComponent.h
-    include/ecs/components/ProjectileComponent.h
-    include/ecs/components/StaticComponent.h
-    include/ecs/components/TagComponent.h
-    include/ecs/components/TransformComponent.h
-    include/ecs/systems/CollisionEventSystem.h
-    include/ecs/systems/GravitySystem.h
-    include/ecs/systems/MovementSystem.h
-    include/ecs/systems/PhysicsResponseSystem.h
-    include/ecs/events/CollisionDirection.h
-)
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "src" FILES
-    src/World.cpp
-)
+# source_group mirrors the real folder tree inside VS/Rider's project view.
+# Each TREE root only accepts files that live under it, so src/ and include/ stay separate calls.
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/include PREFIX "include" FILES ${ENGINE_HEADERS})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR}/src PREFIX "src" FILES ${ENGINE_SRC})
 
 # target_include_directories: Tells CMake (and the compiler) where to look for #include files.
 #
