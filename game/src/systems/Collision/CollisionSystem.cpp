@@ -14,16 +14,18 @@ void CollisionSystem::update(World& world, float deltaTime)
 
     for (size_t i = 0; i < entities.size(); i++)
     {
+        auto& t1 = world.getComponent<TransformComponent>(entities[i]);
+        auto& c1 = world.getComponent<ColliderComponent>(entities[i]);
+        bool s1 = world.hasComponent<StaticComponent>(entities[i]);
+        
         for (size_t j = i + 1; j < entities.size(); j++)
         {
-            auto& t1 = world.getComponent<TransformComponent>(entities[i]);
-            auto& t2 = world.getComponent<TransformComponent>(entities[j]);
-            auto& c1 = world.getComponent<ColliderComponent>(entities[i]);
-            auto& c2 = world.getComponent<ColliderComponent>(entities[j]);
-            bool s1 = world.hasComponent<StaticComponent>(entities[i]);
             bool s2 = world.hasComponent<StaticComponent>(entities[j]);
-
+            
             if (s1 && s2) continue;
+
+            auto& t2 = world.getComponent<TransformComponent>(entities[j]);
+            auto& c2 = world.getComponent<ColliderComponent>(entities[j]);
 
 
             float overlapX = std::min(t1.x + c1.width, t2.x + c2.width) - std::max(t1.x, t2.x);

@@ -2,7 +2,6 @@
 
 #include <format>
 
-#include "ShootingSystem.h"
 #include "components/DeadComponent.h"
 #include "components/HealthComponent.h"
 #include "components/RenderComponent.h"
