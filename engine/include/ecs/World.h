@@ -7,9 +7,12 @@
 #include <vector>       
 #include <cassert>      
 #include <algorithm>    
+#include <memory>
 #include <unordered_set>
 
 #include "EventBus.h"
+#include "storage/IComponentStore.h"
+#include "storage/SparseSet.h"
 
 class World {
 public:
@@ -101,5 +104,50 @@ private:
     std::vector<bool> m_liveIndices;  // alive entities
 
     std::unordered_map<std::type_index,std::unordered_map<Entity, std::any>> m_components;
+    
+    std::unordered_map<std::type_index, std::unique_ptr<IComponentStore>> m_stores;
+    
+    
+    template <typename T>
+    SparseSet<T>* getOrCreateStore()
+    {
+        auto key = std::type_index(typeid(T));
+        auto it = m_stores.find(key);
+
+        if (it == m_stores.end())
+        {
+            it = m_stores.emplace(key, std::make_unique<SparseSet<T>>()).first;
+        }
+        
+        return static_cast<SparseSet<T>*>(it->second.get());
+    }
+    
+    template <typename T>
+    SparseSet<T>* findStore()
+    {
+        auto key = std::type_index(typeid(T));
+        auto it = m_stores.find(key);
+        
+        if (it == m_stores.end())
+        {
+            return nullptr;
+        }
+        
+        return static_cast<SparseSet<T>*>(it->second.get());
+    }
+    
+    template <typename T>
+    const SparseSet<T>* findStore() const
+    {
+        auto key = std::type_index(typeid(T));
+        auto it = m_stores.find(key);
+        
+        if (it == m_stores.end())
+        {
+            return nullptr;
+        }
+        
+        return static_cast<const SparseSet<T>*>(it->second.get());
+    }
     
 };

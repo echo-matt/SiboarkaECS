@@ -1,11 +1,12 @@
 ﻿#pragma once
 #include <cassert>
 #include <vector>
+#include "IComponentStore.h"
 
 #include "ecs/Types.h"
 
 template <typename T>
-class SparseSet
+class SparseSet : public IComponentStore
 {
 private:
     std::vector<uint32_t> sparse;
@@ -14,15 +15,12 @@ private:
     
     void validate() const
     {
-#ifdef ECS_DEBUG_SPARSE_SET
         assert(dense.size() == components.size() && "Dense and components size mismatch");
         for (size_t i = 0; i < dense.size(); ++i)
         {
             Entity e = dense[i];
             assert(sparse[entityIndex(e)] == i && "Sparse to dense mapping corrupted");
         }
-        
-#endif
     }
 
 public:
@@ -31,7 +29,7 @@ public:
     {
         uint32_t i = entityIndex(e);
         
-        return i < sparse.size() && sparse[i] < dense.size() && dense[i] == e;
+        return i < sparse.size() && sparse[i] < dense.size() && dense[sparse[i]] == e;
     }
     
     void insert(Entity e, T c)
@@ -56,13 +54,19 @@ public:
         validate();
     }
     
-    T& get(Entity e) const
+    T& get(Entity e)
     {
         assert(has(e) && "Cannot get component: Entity is not a member");
         return components[sparse[entityIndex(e)]];
     }
     
-    void remove(Entity e)
+    const T& get(Entity e) const
+    {
+        assert(has(e) && "Cannot get component: Entity is not a member");
+        return components[sparse[entityIndex(e)]];
+    }
+    
+    void remove(Entity e) override
     {
         // If the entity does not exist
         if (!has(e)) return;
@@ -83,9 +87,9 @@ public:
         validate();
     }
     
-    const std::vector<Entity>& entities() const { return dense; }
+    const std::vector<Entity>& entities() const override { return dense; }
     std::vector<T>& data() { return components; }
     const std::vector<T>& data() const { return components; }
     
-    size_t size() const { return dense.size(); }
+    size_t size() const override { return dense.size(); }
 };
