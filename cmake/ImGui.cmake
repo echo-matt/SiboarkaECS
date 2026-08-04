@@ -38,7 +38,6 @@ FetchContent_Declare(
     rlimgui
     GIT_REPOSITORY https://github.com/raylib-extras/rlImGui.git
     GIT_TAG        552a3ad44f130d05055e00e11e1c3f7cf45e5657  # pinned to commit compatible with imgui v1.92.8
-    GIT_SHALLOW    TRUE
 )
 
 FetchContent_GetProperties(rlimgui)

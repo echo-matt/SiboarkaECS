@@ -47,8 +47,8 @@ void World::destroyEntity(Entity entity) {
     if (!isAlive(entity)) return;
     
     // remove the entity components
-    for (auto& [typeKey, entityMap] : m_components) {
-        entityMap.erase(entity);
+    for (auto& [typeKey, store] : m_stores) {
+        store->remove(entity);
     }
     
     uint32_t index = entityIndex(entity);

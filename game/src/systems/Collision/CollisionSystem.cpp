@@ -10,7 +10,7 @@
 
 void CollisionSystem::update(World& world, float deltaTime)
 {
-    auto entities = world.getEntitiesWith<TransformComponent, ColliderComponent>();
+    world.getEntitiesWith<TransformComponent, ColliderComponent>(entities);
 
     for (size_t i = 0; i < entities.size(); i++)
     {

@@ -13,4 +13,6 @@ public:
     virtual size_t size() const = 0;
     
     virtual const std::vector<Entity>& entities() const = 0;
+    
+    virtual bool has(Entity entity) const = 0;
 };

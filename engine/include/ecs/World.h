@@ -3,12 +3,11 @@
 
 #include <unordered_map>
 #include <typeindex>    
-#include <any>          
 #include <vector>       
 #include <cassert>      
 #include <algorithm>    
+#include <array>
 #include <memory>
-#include <unordered_set>
 
 #include "EventBus.h"
 #include "storage/IComponentStore.h"
@@ -27,9 +26,9 @@ public:
         
         assert(isAlive(entity) && "Cannot add a component to a dead entity");
         
-        auto key = std::type_index(typeid(T));
-
-        m_components[key][entity] = std::move(component);
+        SparseSet<T>* store = getOrCreateStore<T>();
+        
+        store->insert(entity, std::move(component));
     }
 
     template<typename T>
@@ -37,8 +36,10 @@ public:
         assert(isAlive(entity) && "Cannot get component from a dead entity");
         assert(hasComponent<T>(entity) && "Entity does not have the requested component!");
         
-        auto key = std::type_index(typeid(T));
-        return std::any_cast<T&>(m_components[key][entity]);
+        SparseSet<T>* store = findStore<T>();
+        assert(store != nullptr && "Store not valid");
+        
+        return store->get(entity);
     }
 
     template<typename T>
@@ -46,8 +47,13 @@ public:
         assert(isAlive(entity) && "Cannot get component from a dead entity");
         assert(hasComponent<T>(entity) && "Entity does not have the requested component!");
         
-        auto key = std::type_index(typeid(T));
-        return std::any_cast<const T&>(m_components.at(key).at(entity));
+        // store is declared as const because inside a const function it needs to be a non writable pointer.
+        // so findStore<T> passes through the const version that returns a const, so the variable assigned to it
+        // needs to be const too. The same happens in hasComponent below
+        const SparseSet<T>* store = findStore<T>();
+        assert(store != nullptr && "Store not valid");
+        
+        return store->get(entity);
     }
     
     template<typename T>
@@ -55,44 +61,113 @@ public:
         
         if (!isAlive(entity)) return false; // Cannot get a component from a dead entity
         
-        auto key = std::type_index(typeid(T));
-        
-        auto typeIt = m_components.find(key);
-        if (typeIt == m_components.end()) return false;
-
-        return typeIt->second.count(entity) > 0;
+        const SparseSet<T>* store = findStore<T>();
+        if (store == nullptr)
+        {
+            return false;
+        }
+        return store->has(entity);
     }
 
     template<typename T>
     void removeComponent(Entity entity) {
         
         if (!isAlive(entity)) return;   // Cannot remove a component froma dead entity
-        auto key = std::type_index(typeid(T));
-        auto typeIt = m_components.find(key);
-        if (typeIt != m_components.end())
+        
+        SparseSet<T>* store = findStore<T>();
+        if (store == nullptr)
         {
-            typeIt->second.erase(entity);
+            return;
         }
+        store->remove(entity);
     }
 
+    // This function finds the entities with the requested components
+    // It first gets the store with the rarest component
+    // Then queries the entities inside that store to check if they have all the required components
     template<typename... Ts>
     std::vector<Entity> getEntitiesWith() {
-        std::vector<Entity> result;
         
-        for (uint32_t index = 0; index < m_liveIndices.size(); ++index)
+        static_assert(sizeof ... (Ts) > 0, "getEntitiesWith called with no components");
+        //Empty result vector
+        std::vector<Entity> result;
+        //Array of IComponentStore* size of how many components i am passing in
+        std::array<IComponentStore*, sizeof...(Ts)> stores = { findStore<Ts>() ... };
+        
+        // Iterate all the stores, if any is nullptr, return the empty vector.
+        // A missing store means zero entities can possibily have this combination
+        for (IComponentStore* store : stores)
         {
-            if (m_liveIndices[index])
+            if (store == nullptr) return result;
+        }
+        
+        // Find the store with the smallest entity count
+        IComponentStore* smallestStore = stores[0];
+        size_t minSize = smallestStore->size();
+        
+        for (size_t i = 1; i < stores.size(); ++i)
+        {
+            if (stores[i]->size() < minSize)
             {
-                Entity e = makeEntity(index, m_generations[index]);
+                smallestStore = stores[i];
+                minSize = stores[i]->size();
+            }
+        }
+        
+        // To not reallocate the vector
+        result.reserve(minSize);
+        
+        // Loop over the smallest store's entities
+        for (Entity e : smallestStore->entities())
+        {
+            // Test if the entity has ALL the requested components
+            if ((hasComponent<Ts>(e) && ...))
+            {
+                result.push_back(e);
+            }
+        }
+        
+        return result;
+    }
+    
+    template<typename... Ts>
+    void getEntitiesWith(std::vector<Entity>& outResult)
+    {
+        outResult.clear();
+        
+        static_assert(sizeof ... (Ts) > 0, "getEntitiesWith called with no components");
+        
+        std::array<IComponentStore*, sizeof...(Ts)> stores = { findStore<Ts>() ... };
 
-                if ((hasComponent<Ts>(e) && ... ))
-                {
-                    result.push_back(e);
-                }
+        for (IComponentStore* store : stores)
+        {
+            if (store == nullptr)
+            {
+                return; 
             }
         }
 
-        return result;
+        IComponentStore* smallestStore = stores[0];
+        size_t minSize = smallestStore->size();
+        
+        for (size_t i = 1; i < stores.size(); ++i)
+        {
+            if (stores[i]->size() < minSize)
+            {
+                smallestStore = stores[i];
+                minSize = stores[i]->size();
+            }
+        }
+        
+        outResult.reserve(minSize);
+
+        for (Entity e : smallestStore->entities())
+        {
+            if ((hasComponent<Ts>(e) && ...))
+            {
+                outResult.push_back(e);
+            }
+        }
     }
     
     EventBus events;
@@ -102,8 +177,6 @@ private:
     std::vector<uint16_t> m_generations; //generation per index
     std::vector<uint32_t> m_freeIndices; //recycled indices
     std::vector<bool> m_liveIndices;  // alive entities
-
-    std::unordered_map<std::type_index,std::unordered_map<Entity, std::any>> m_components;
     
     std::unordered_map<std::type_index, std::unique_ptr<IComponentStore>> m_stores;
     

@@ -15,4 +15,7 @@ class CollisionSystem : public System
 {
 public:
     void update(World& world, float deltaTime) override;
+    
+private:
+    std::vector<Entity> entities;
 };

@@ -1,6 +1,5 @@
 #include "PathFollowingSystem.h"
 
-#include <algorithm>
 #include <format>
 #include <limits>
 
@@ -8,7 +7,6 @@
 #include "components/EnemyComponent.h"
 #include "components/TargetComponent.h"
 #include "components/TowerComponent.h"
-#include "ecs/Logger.h"
 #include "ecs/Types.h"
 #include "ecs/World.h"
 #include "ecs/components/TransformComponent.h"
@@ -22,15 +20,16 @@ PathFollowingSystem::PathFollowingSystem()
 
 void PathFollowingSystem::update(World& world, float deltaTime)
 {
-    std::unordered_set<Entity> blockedEnemies;
+    m_blockedEnemies.clear();
     
-    for (Entity e : world.getEntitiesWith<BaseComponent>())
+    world.getEntitiesWith<BaseComponent>(m_queryBuffer);
+    for (Entity e : m_queryBuffer)
     {
-        _waypoints.try_emplace(e, world.getComponent<TargetComponent>(e).TargetPosition);
+        m_waypoints.try_emplace(e, world.getComponent<TargetComponent>(e).TargetPosition);
     }
     for (const TowerPlacedEvent& event : world.events.getEvents<TowerPlacedEvent>())
     {
-        _waypoints.try_emplace(event.entity, world.getComponent<TargetComponent>(event.entity).TargetPosition);
+        m_waypoints.try_emplace(event.entity, world.getComponent<TargetComponent>(event.entity).TargetPosition);
     }
     
     for (const CollisionEvent& collisionEvent : world.events.getEvents<CollisionEvent>())
@@ -39,33 +38,35 @@ void PathFollowingSystem::update(World& world, float deltaTime)
         {
             if (world.hasComponent<TowerComponent>(collisionEvent.b) || world.hasComponent<BaseComponent>(collisionEvent.b))
             {
-                blockedEnemies.insert(collisionEvent.a);
+                m_blockedEnemies.insert(collisionEvent.a);
             }
         }else if (world.hasComponent<EnemyComponent>(collisionEvent.b))
         {
             if (world.hasComponent<TowerComponent>(collisionEvent.a) || world.hasComponent<BaseComponent>(collisionEvent.a))
             {
-                blockedEnemies.insert(collisionEvent.b);
+                m_blockedEnemies.insert(collisionEvent.b);
             }
         }
     }
 
     // --- ENEMY MOVEMENT LOOP ---
-    for (Entity e : world.getEntitiesWith<TransformComponent, EnemyComponent>())
+    world.getEntitiesWith<TransformComponent, EnemyComponent>(m_queryBuffer);
+    for (Entity e : m_queryBuffer)
     {
         EnemyComponent& enemy_component = world.getComponent<EnemyComponent>(e);
         TransformComponent& transform_component = world.getComponent<TransformComponent>(e);
 
         float closestDist = std::numeric_limits<float>::max();
         Entity closestEntity = NULL_ENTITY;
-
-        if (blockedEnemies.contains(e))
+        std::pair<int, int> closestWaypoint = {0,0};
+        
+        if (m_blockedEnemies.contains(e))
         {
             transform_component.velX = 0;
             transform_component.velY = 0;
         }else
         {
-            for (const auto& [entity, waypoint] : _waypoints)
+            for (const auto& [entity, waypoint] : m_waypoints)
             {
                 auto dx = waypoint.first  - transform_component.x;
                 auto dy = waypoint.second - transform_component.y;
@@ -75,6 +76,7 @@ void PathFollowingSystem::update(World& world, float deltaTime)
                 {
                     closestDist = dist;
                     closestEntity = entity;
+                    closestWaypoint = waypoint;
                 }
             }
         
@@ -84,10 +86,9 @@ void PathFollowingSystem::update(World& world, float deltaTime)
                 transform_component.velY = 0.f;
                 continue;
             }
-        
-            auto& targetPos = _waypoints[closestEntity];
-            auto dx = targetPos.first  - transform_component.x;
-            auto dy = targetPos.second - transform_component.y;
+            
+            auto dx = closestWaypoint.first  - transform_component.x;
+            auto dy = closestWaypoint.second - transform_component.y;
         
             float length = closestDist;
 
@@ -101,6 +102,6 @@ void PathFollowingSystem::update(World& world, float deltaTime)
     
     for (const DeathEvent& event : world.events.getEvents<DeathEvent>())
     {
-        _waypoints.erase(event.entity);
+        m_waypoints.erase(event.entity);
     }
 }

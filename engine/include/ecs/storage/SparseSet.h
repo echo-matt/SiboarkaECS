@@ -25,7 +25,7 @@ private:
 
 public:
     
-    bool has(Entity e) const
+    bool has(Entity e) const override
     {
         uint32_t i = entityIndex(e);
         
