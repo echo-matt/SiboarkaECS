@@ -18,12 +18,8 @@ public:
 
     void update(World& world, float deltaTime) override
     {
-
-        for (Entity e : world.getEntitiesWith<TransformComponent>())
+        for (TransformComponent& t : world.getComponents<TransformComponent>())
         {
-            auto& t = world.getComponent<TransformComponent>(e);
-            float oldX = t.x;
-            float oldY = t.y;
             t.x += t.velX * deltaTime;
             t.y += t.velY * deltaTime;
         }

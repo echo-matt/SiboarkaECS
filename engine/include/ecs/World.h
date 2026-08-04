@@ -8,6 +8,7 @@
 #include <algorithm>    
 #include <array>
 #include <memory>
+#include <span>
 
 #include "EventBus.h"
 #include "storage/IComponentStore.h"
@@ -54,6 +55,13 @@ public:
         assert(store != nullptr && "Store not valid");
         
         return store->get(entity);
+    }
+    
+    template<typename T>
+    std::span<T> getComponents()
+    {
+        SparseSet<T>* store = getOrCreateStore<T>();
+        return store->data();
     }
     
     template<typename T>
