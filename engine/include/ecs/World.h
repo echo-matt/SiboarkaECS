@@ -11,6 +11,7 @@
 #include <span>
 
 #include "EventBus.h"
+#include "storage/ComponentView.h"
 #include "storage/IComponentStore.h"
 #include "storage/SparseSet.h"
 
@@ -178,6 +179,12 @@ public:
         }
     }
     
+    template <typename T>
+    ComponentView<T> view()
+    {
+        return getOrCreateStore<T>();
+    }
+
     EventBus events;
 private:
     
