@@ -10,7 +10,7 @@ No engine framework — a custom ECS core, [raylib](https://www.raylib.com/) for
 
 ## Design decisions
 
-The interesting part of this project is not the feature list — it's why the storage looks the way it does, and what each choice costs. Each decision below is written up in depth under [`docs/`](#documentation).
+The interesting part of this project is not the feature list — it's why the storage looks the way it does, and what each choice costs.
 
 ### Entity identity — generational handles
 
@@ -78,22 +78,6 @@ Honest list of what's weak, roughly in order of impact:
 | **Benchmarks** | The storage migration has not been measured. Expectation is no visible difference at the demo's scale and a clear one at several thousand entities; that needs verifying rather than asserting. |
 | **Multi-component iteration** | Multi-type queries still probe per entity. A single-type `ComponentView<T>` (dense iteration yielding entity + component) is in progress; the multi-type case is where archetypes would start to pay. |
 | **Release-mode preconditions** | Several are guarded by `assert` only, so Debug and Release differ in behaviour on violation. |
-
----
-
-## Documentation
-
-Design notes and long-form write-ups live in [`docs/`](docs/):
-
-| Document | Contents |
-|---|---|
-| [`01-scene-system.md`](docs/01-scene-system.md) | Scene stack and lifecycle |
-| [`02-sprite-rendering.md`](docs/02-sprite-rendering.md) | Texture loading and the render path |
-| [`03-completable-game-loop.md`](docs/03-completable-game-loop.md) | Wave/game-state flow |
-| [`04-performance-systems.md`](docs/04-performance-systems.md) | Working notes on locality and spatial partitioning |
-| [`04-performance-systems-textbook.md`](docs/04-performance-systems-textbook.md) | Data locality, pool allocation, and spatial partitioning — cost models, complexity, exercises |
-| [`05-sparse-set-textbook.md`](docs/05-sparse-set-textbook.md) | Why a component store is an index: sparse sets, invariants, preconditions, and where archetypes win |
-| [`05-sparse-set-practicum.md`](docs/05-sparse-set-practicum.md) | The staged migration plan actually followed to build the above |
 
 ---
 
@@ -176,7 +160,6 @@ SiboarkaECS/
 ├── cmake/
 │   ├── Raylib.cmake          ← FetchContent for raylib 5.0
 │   └── ImGui.cmake           ← FetchContent for Dear ImGui v1.92.8 + rlImGui
-├── docs/                     ← design notes and write-ups
 ├── engine/                   ← pure ECS library (zero raylib dependency)
 │   ├── include/ecs/
 │   │   ├── Types.h           ← Entity handle layout, MAX_ENTITIES
