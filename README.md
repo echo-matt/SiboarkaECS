@@ -1,95 +1,170 @@
 # SiboarkaECS
 
-A learning-focused **Entity Component System (ECS)** game engine written in C++20, with a tower defense demo and an in-engine editor built on top of it.
+A learning-focused **Entity Component System (ECS)** game engine in C++20, with a tower-defence demo and an in-engine editor built on top of it.
 
-Built as a hands-on way to learn ECS architecture from scratch. No game engine framework — just a custom ECS core, [raylib](https://www.raylib.com/) for rendering, [Dear ImGui](https://github.com/ocornut/imgui) for the editor UI, and CMake to tie it together.
+No engine framework — a custom ECS core, [raylib](https://www.raylib.com/) for rendering, [Dear ImGui](https://github.com/ocornut/imgui) for the editor, CMake to tie it together.
 
 > No code has been written by Claude. Claude is used as a teacher/guide.
 
 ---
 
+## Design decisions
+
+The interesting part of this project is not the feature list — it's why the storage looks the way it does, and what each choice costs. Each decision below is written up in depth under [`docs/`](#documentation).
+
+### Entity identity — generational handles
+
+An `Entity` is a 32-bit handle, not an index:
+
+```
+ 31                  12 11        0
+ ┌──────────────────────┬───────────┐
+ │   index (20 bits)    │ gen (12b) │
+ └──────────────────────┴───────────┘
+```
+
+Destroyed indices are recycled through a free list, and the generation counter for that index is incremented on destruction. A handle is alive only if its generation still matches the world's.
+
+**Why:** without recycling, identifiers grow monotonically and the sparse array (below) would have to be sized by *total entities ever created* rather than *peak live entities* — unbounded in a game that spawns a projectile per shot. Recycling bounds it; generations are what make recycling safe, converting a silent wrong-object read into a detectable failure.
+
+**Bonus:** liveness became one indexed array read, replacing a hash lookup into a node-based `unordered_set`.
+
+### Component storage — sparse sets
+
+Each component type gets a `SparseSet<T>` holding three parallel arrays:
+
+```
+sparse      indexed by entity index → position in dense
+dense       [ 20481 , 8193 , 36865 ]      who owns each position
+components  [   T   ,  T   ,   T   ]      the actual data, packed, no gaps
+```
+
+`has`, `get`, `insert`, and `remove` are all O(1) with no hashing. Removal is swap-and-pop: the last element backfills the vacated slot, so components stay contiguous and iteration is a bare index loop with unit stride.
+
+**Why:** a component store has to answer two questions that pull in opposite directions — *"what is entity 47's transform?"* (wants an index) and *"give me every transform"* (wants contiguity). A hash map answers the first and destroys the second. A packed vector answers the second and can't answer the first. The sparse set buys both by spending `MAX_ENTITIES × 4` bytes per component type on a mostly-empty index array.
+
+### Type erasure — `IComponentStore`
+
+`SparseSet<Transform>` and `SparseSet<Health>` are unrelated types, so they can't share a container. Both derive from `IComponentStore`, which exposes only the operations whose signatures don't mention `T` — `remove`, `size`, `has`, and `entities()`. `World` holds `unordered_map<type_index, unique_ptr<IComponentStore>>`.
+
+The type lookup therefore happens **once per store**, not once per component access.
+
+Keeping `dense` as a plain `vector<Entity>` — rather than merging it with the component array — is what allows `entities()` to live on the untyped base at all. That's what makes the query path below possible.
+
+### Queries — drive the smallest store
+
+`getEntitiesWith<A, B>()` looks up each type's store, picks the one with the fewest entries, walks its dense array, and probes the others. Cost is proportional to the *smallest* store rather than to the live entity count.
+
+An overload takes a caller-owned buffer and `clear()`s it, so per-frame queries reuse their allocation instead of building a fresh vector every frame.
+
+### What this design gives up
+
+Stated plainly, because these are real:
+
+- **Reference invalidation.** A `T&` obtained from the world is invalidated when *any other* entity's `T` is removed — swap-and-pop can move the last element on top of the vacated slot. A hash map would not do this. Structural changes must stay outside iteration loops.
+- **Volatile iteration order.** Dense order is insertion order mutated by every removal. Any system whose output depends on visit order (tie-breaking between equidistant targets, for example) can change behaviour as a side effect of an unrelated entity's death.
+- **Memory proportional to `MAX_ENTITIES`, not to live entities**, for every component type. ~20 KB per type at the current bound. Most of it is never touched, so it costs address space rather than working set — but it is reserved.
+
+---
+
+## Known limitations
+
+Honest list of what's weak, roughly in order of impact:
+
+| Area | Status |
+|---|---|
+| **Collision broad phase** | Still O(n²) — every pair tested every frame. This dominates everything the storage work improved. A uniform grid is the next planned change. |
+| **Tests** | None yet. `SparseSet` is the highest-value target: property-based testing against a `std::map` reference model. |
+| **Benchmarks** | The storage migration has not been measured. Expectation is no visible difference at the demo's scale and a clear one at several thousand entities; that needs verifying rather than asserting. |
+| **Multi-component iteration** | Multi-type queries still probe per entity. A single-type `ComponentView<T>` (dense iteration yielding entity + component) is in progress; the multi-type case is where archetypes would start to pay. |
+| **Release-mode preconditions** | Several are guarded by `assert` only, so Debug and Release differ in behaviour on violation. |
+
+---
+
+## Documentation
+
+Design notes and long-form write-ups live in [`docs/`](docs/):
+
+| Document | Contents |
+|---|---|
+| [`01-scene-system.md`](docs/01-scene-system.md) | Scene stack and lifecycle |
+| [`02-sprite-rendering.md`](docs/02-sprite-rendering.md) | Texture loading and the render path |
+| [`03-completable-game-loop.md`](docs/03-completable-game-loop.md) | Wave/game-state flow |
+| [`04-performance-systems.md`](docs/04-performance-systems.md) | Working notes on locality and spatial partitioning |
+| [`04-performance-systems-textbook.md`](docs/04-performance-systems-textbook.md) | Data locality, pool allocation, and spatial partitioning — cost models, complexity, exercises |
+| [`05-sparse-set-textbook.md`](docs/05-sparse-set-textbook.md) | Why a component store is an index: sparse sets, invariants, preconditions, and where archetypes win |
+| [`05-sparse-set-practicum.md`](docs/05-sparse-set-practicum.md) | The staged migration plan actually followed to build the above |
+
+---
+
 ## What's inside
 
-### Engine (`engine/`)
-A self-contained ECS library with **no raylib dependency**:
+### Engine (`engine/`) — no raylib dependency
 
-| Feature | Description |
+| Piece | Role |
 |---|---|
-| `World` | Entity registry — create, destroy, attach/query components |
+| `World` | Entity registry — handles, lifetime, component storage, queries |
+| `SparseSet<T>` | Per-type component storage |
+| `IComponentStore` | Type-erased store interface |
 | `System` | Base class with a pure virtual `update()` |
-| `EventBus` | Typed publish/subscribe event system |
+| `EventBus` | Typed publish/subscribe events |
 | `SceneManager` | Stack-based scene switching |
-| `Logger` | Simple logging utility |
-| Physics | `CollisionSystem`, `GravitySystem`, `MovementSystem`, `PhysicsResponseSystem` |
-| Components | `TransformComponent`, `ColliderComponent`, `GravityComponent`, `TagComponent`, and more |
+| `Logger` | Logging utility |
+| Systems | `MovementSystem`, `GravitySystem`, `PhysicsResponseSystem`, `CollisionEventSystem` |
+| Components | `TransformComponent`, `ColliderComponent`, `GravityComponent`, `TagComponent`, and others |
 
-### Game (`game/`)
-A tower defense prototype that runs on the engine:
+### Game (`game/`) — tower-defence demo
 
 | System | Role |
 |---|---|
 | `WaveSpawnerSystem` | Spawns enemy waves on a timer |
-| `PathFollowingSystem` | Moves enemies along a predefined path |
-| `PlacementSystem` | Handles tower placement input |
-| `ShootingSystem` | Towers detect and shoot at enemies |
-| `DamageSystem` | Resolves projectile hits and health |
-| `InputSystem` | Player input handling |
+| `PathFollowingSystem` | Steers enemies toward the nearest waypoint |
+| `PlacementSystem` | Tower placement and removal |
+| `ShootingSystem` | Target acquisition and firing |
+| `CollisionSystem` | Broad + narrow phase, emits `CollisionEvent` |
+| `DamageSystem` | Resolves hits and health |
+| `DeathSystem` | Deferred entity destruction |
+| `GameStateSystem` | Win/lose and wave progression |
+| `InputSystem` | Player input |
 | `RenderSystem` | Draws everything via raylib |
-| `VFXSystem` | Visual effects (laser beams, hit flashes) |
+| `VFXSystem` | Laser beams, hit flashes |
+
+`CollisionSystem` and `RenderSystem` live in `game/` rather than `engine/` because they touch raylib types — see the architecture rule below.
 
 ### Editor
-An Unreal-inspired in-engine editor built with Dear ImGui + rlImGui:
+
+Unreal-inspired panels built with Dear ImGui + rlImGui:
 
 | Panel | Role |
 |---|---|
-| **Viewport** | Game renders to a `RenderTexture2D` displayed as a resizable panel |
-| **Hierarchy** | Lists all tagged entities; click to select |
-| **Inspector** | Live-edits components (`TransformComponent`, `HealthComponent`, etc.) on the selected entity |
-| **Play/Pause** | Freezes game time while keeping the editor interactive |
+| **Viewport** | Game renders to a `RenderTexture2D` shown as a resizable panel |
+| **Hierarchy** | Lists tagged entities; click to select |
+| **Inspector** | Live-edits components on the selected entity |
+| **Play/Pause** | Freezes game time while the editor stays interactive |
 
-Mouse input is scoped to the viewport content area — clicking editor panels never leaks into the game.
+Mouse input is scoped to the viewport content area, so clicking editor panels never leaks into the game.
 
 ---
 
 ## Requirements
 
-- [CMake](https://cmake.org/) 3.16+
+- CMake 3.16+
 - A C++20 compiler — MSVC 2019+, GCC 10+, or Clang 10+
-- Internet access on the **first build** (CMake downloads raylib, Dear ImGui, and rlImGui automatically via FetchContent)
-
----
+- Internet access on the **first build** (raylib, Dear ImGui, and rlImGui are fetched via `FetchContent`)
 
 ## Build & Run
 
-### Command line
-
 ```bash
-git clone https://github.com/echo-matt/SiboarkaECS.git
-cd SiboarkaECS
-
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Debug
+cmake -S . -B build
+cmake --build build --config Debug
+./build/game/Debug/game.exe
 ```
 
-Then run:
+First configure takes ~30–60 seconds while dependencies download and compile.
 
-```bash
-./game/Debug/game.exe
-```
+**Visual Studio:** run the configure step above, open `build/SiboarkaECS.sln`, set `game` as the startup project, press F5.
 
-> First build takes ~30–60 seconds while raylib, ImGui, and rlImGui download and compile. Subsequent builds are fast.
-
-### Visual Studio
-
-1. Generate the solution:
-   ```bash
-   mkdir build && cd build && cmake ..
-   ```
-2. Open `build/SiboarkaECS.sln` in Visual Studio
-3. Right-click `game` in Solution Explorer → **Set as Startup Project**
-4. Press **F5**
+> Changing a class's *members* (adding, removing, or reordering) requires a full rebuild, not an incremental one — every translation unit that includes the header has to agree on the layout. Use `cmake --build build --config Debug --clean-first`.
 
 ---
 
@@ -101,18 +176,20 @@ SiboarkaECS/
 ├── cmake/
 │   ├── Raylib.cmake          ← FetchContent for raylib 5.0
 │   └── ImGui.cmake           ← FetchContent for Dear ImGui v1.92.8 + rlImGui
+├── docs/                     ← design notes and write-ups
 ├── engine/                   ← pure ECS library (zero raylib dependency)
 │   ├── include/ecs/
-│   │   ├── World.h           ← entity registry + InputState
+│   │   ├── Types.h           ← Entity handle layout, MAX_ENTITIES
+│   │   ├── World.h           ← registry: handles, storage, queries
 │   │   ├── System.h          ← base system class
 │   │   ├── EventBus.h        ← typed event system
 │   │   ├── SceneManager.h    ← scene stack
+│   │   ├── storage/          ← SparseSet, IComponentStore, ComponentView
 │   │   ├── components/       ← engine-owned components
-│   │   └── systems/          ← engine-owned systems (physics, collision)
-│   └── src/
-│       └── World.cpp
-└── game/                     ← demo executable (uses raylib + imgui)
-    ├── res/                  ← assets (sprites, etc.)
+│   │   └── systems/          ← engine-owned systems
+│   └── src/World.cpp
+└── game/                     ← demo executable (raylib + imgui)
+    ├── res/                  ← assets
     └── src/
         ├── components/       ← game-specific components
         ├── systems/          ← game-specific systems
@@ -121,13 +198,14 @@ SiboarkaECS/
         └── main.cpp          ← game loop + editor panels
 ```
 
+Sources are auto-discovered by `file(GLOB_RECURSE ... CONFIGURE_DEPENDS)`. The patterns are not symmetric: the engine globs `src/*.cpp` and `include/ecs/*.h`, while the game globs both extensions anywhere under `src/`. A header placed in `engine/include/` instead of `engine/include/ecs/` still compiles but never appears in the IDE tree.
+
 ---
 
-## Architecture note
+## Architecture rule
 
-The engine and game are kept deliberately separate:
+> `engine/` must never `#include <raylib.h>`.
 
-- `engine/` knows **nothing** about raylib or ImGui — it is a reusable ECS library
-- `game/` owns all rendering, game logic, and editor UI, and depends on `engine`, `raylib`, and `imgui`
+A component or system lives where its dependencies live. Anything touching a raylib type (`Color`, `Texture2D`, `Rectangle`) belongs in `game/src/`; anything that is pure ECS belongs in `engine/`.
 
-This means you can swap the renderer or reuse the engine core in a completely different project.
+The consequence is that `engine/` is a reusable ECS library — the renderer can be swapped, or the core lifted into an unrelated project, without touching it.
